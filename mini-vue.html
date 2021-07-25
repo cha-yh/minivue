@@ -1,5 +1,8 @@
 <div id="app"></div>
 <script>
+    /**
+     * RENDER CORE
+     */
     function h(tag, props, children) {
         return {
             tag,
@@ -98,6 +101,9 @@
 
     }
 
+    /**
+     * REACTIVE CORE
+     */
     let activeEffect;
 
     class Dep {
@@ -161,6 +167,9 @@
         return new Proxy(raw, reactiveHandlers);        
     }
 
+    /**
+     * MOUNT APP
+     */
     const App = {
         data: reactive({
             count: 0
