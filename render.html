@@ -1,0 +1,121 @@
+<div id="app"></div>
+<style>
+    .red {
+        color: red;
+    }
+</style>
+<script>
+    /**
+     * RENDER CORE
+     */
+     function h(tag, props, children) {
+        return {
+            tag,
+            props,
+            children,
+        }
+    }
+
+    function mount(vnode, container) {
+        const el = vnode.el = document.createElement(vnode.tag); // vnode.el 에 element 저장하고 const el에 정의
+        //props
+        if (vnode.props) {
+            for (const key in vnode.props) {
+                const value = vnode.props[key];
+                if (key.startsWith('on')) {
+                    el.addEventListener(key.slice(2).toLowerCase(), value)
+                } else {
+                    el.setAttribute(key, value);
+                }
+            }
+        }
+
+        //children
+        if (vnode.children) {
+            if (typeof vnode.children === 'string') {
+                el.textContent = vnode.children;
+            } else {
+                vnode.children.forEach(child => {
+                    mount(child, el);
+                })
+            }
+        }
+        container.appendChild(el);
+        console.log('vnode in mount', vnode)
+    }
+
+    function patch(n1, n2) {
+        if (n1.tag === n2.tag) {
+            console.log('n1', n1)
+            console.log('n2', n2)
+            const el = n2.el = n1.el; // newNode에 oldNode element 저장, const el에 newNode 정의
+            // Props
+            const oldProps = n1.props || {};
+            const newProps = n2.props || {};
+            for (const key in newProps) {
+                const oldValue = oldProps[key];
+                const newValue = newProps[key];
+                if (newValue !== oldValue) {
+                    el.setAttribute(key, newValue);
+                }
+
+            }
+            for (const key in oldProps) {
+                if (!(key in newProps)) {
+                    el.removeAttribute(key)
+                }
+            }
+
+            //children
+            const oldChildren = n1.children;
+            const newChildren = n2.children;
+            if (typeof newChildren === 'string') {
+                if (typeof oldChildren !== 'string') {
+                    if (newChildren !== oldChildren) {
+                        el.textContent = newChildren;
+                    }
+                } else {
+                    el.textContent = newChildren;
+                }
+            } else {
+                if (typeof oldChildren === 'string') {
+                    el.innerHTML = '';
+                    newChildren.forEach(child => {
+                        mount(child, el)
+                    })
+                } else {
+                    // diffing part: oldVdom과 newVdom을 비교하는 간단한 알고리즘
+                    // 실제 코드에는 key관련 내용들 포함해서 700줄 넘는 코드에 들어가있음.
+                    const commonLength = Math.min(oldChildren.length, newChildren.length)
+                    for (let i = 0; i < commonLength; i++) {
+                        patch(oldChildren[i], newChildren[i]);
+                    }
+                    if (newChildren.length > oldChildren.length) {
+                        newChildren.slice(oldChildren.length).forEach(child => {
+                            mount(child, el)
+                        })
+                    } else if (newChildren.length < oldChildren.length) {
+                        oldChidlren.slice(newChildren.length).forEach(child => {
+                            el.removeChild(child.el)
+                        })
+                    }
+                }
+            }
+        } else {
+            // skip
+        }
+
+    }
+
+    const vdom = h('div', {class: 'red'}, [
+        h('span', null, 'hello')
+    ])
+
+    mount(vdom, document.getElementById('app'));
+
+    const vdom2 = h('div', {class: 'green'}, [
+        h('span', null, 'changed!')
+    ])
+
+    patch(vdom, vdom2);
+</script>
